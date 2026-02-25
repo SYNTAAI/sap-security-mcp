@@ -103,8 +103,8 @@ Add this to your Claude Desktop config file:
       "env": {
         "JCO_SERVICE_URL": "http://localhost:8080",
         "SAP_HOST": "your-sap-host",
-        "SAP_SYSNR": "00",
-        "SAP_CLIENT": "100",
+        "SAP_SYSNR": "your sap system number",
+        "SAP_CLIENT": "your sap client",
         "SAP_USER": "RFC_COMM_USER",
         "SAP_PASSWORD": "your-password"
       }
