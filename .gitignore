@@ -1,0 +1,32 @@
+# Environment files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated reports
+reports/
+*.xlsx
+*.pdf
+
+# Logs
+*.log
+logs/

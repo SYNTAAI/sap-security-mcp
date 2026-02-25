@@ -1,0 +1,17 @@
+# SyntaAI SAP Security MCP Server - Dependencies
+# Install: pip install -r requirements.txt
+
+# MCP SDK - Model Context Protocol
+mcp>=1.0.0
+
+# Environment configuration
+python-dotenv>=1.0.0
+
+# HTTP client for JCo REST connector
+requests>=2.31.0
+
+# Excel report generation
+openpyxl>=3.1.0
+
+# Data handling (optional, for future enhancements)
+pandas>=2.0.0
