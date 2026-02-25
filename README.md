@@ -67,8 +67,8 @@ JCO_SERVICE_API_KEY=your-api-key
 
 # SAP Communication User
 SAP_HOST=your-sap-host
-SAP_SYSNR=00
-SAP_CLIENT=100
+SAP_SYSNR=synstem number
+SAP_CLIENT=client
 SAP_USER=RFC_COMM_USER
 SAP_PASSWORD=your-password
 
