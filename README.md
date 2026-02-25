@@ -249,7 +249,7 @@ MIT License - see LICENSE file
 
 - Issues: https://github.com/syntaai/sap-security-mcp/issues
 - Documentation: https://docs.syntaai.com/mcp
-- Email: support@syntaai.com
+- Email: contact@syntaai.com
 
 ---
 
