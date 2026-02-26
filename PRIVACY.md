@@ -11,10 +11,17 @@ SyntaAI ERP Security MCP Server ("the Server") is a Model Context Protocol conne
 The Server does **not** collect, store, or retain any personal data or SAP system data. All data flows directly between the AI assistant (e.g., Claude) and the customer's own SAP system via standard OData services.
 
 ### A Note on Other SAP MCP Connectors
-Many open-source SAP connectors use RFC which can expose write, execute, 
-and administrative functions with minimal guardrails. This tool uses OData 
-only — read-only, HTTPS, respecting standard SAP authorizations. 
-Always check what operations any SAP connector exposes before use.
+Many open-source SAP connectors use RFC or JCo libraries which can expose 
+write, execute, and administrative functions with minimal guardrails — 
+including the ability to bypass standard SAP authorization checks 
+if misconfigured.
+
+This Server uses OData only — read-only GET requests, running over standard 
+HTTPS, fully respecting your existing SAP role-based authorization controls. 
+No RFC ports, no native libraries, no backdoor access.
+
+Always verify what operations and protocols any SAP connector exposes 
+before connecting it to your system.
 
 ### What we do NOT collect:
 - SAP user credentials or passwords
@@ -60,6 +67,9 @@ The Server is designed to be GDPR compliant:
 - Data processing occurs only at the customer's direction
 - Customers can revoke access at any time
 
+- No RFC or native SAP libraries are used — eliminating an entire class 
+  of potential security vulnerabilities common in other SAP connectors.
+
 ## Children's Privacy
 
 The Server is designed for enterprise use and is not intended for use by individuals under 18 years of age.
@@ -79,5 +89,6 @@ For questions about this privacy policy or data handling practices:
 ---
 
 SAP and other SAP products and services mentioned herein are trademarks or registered trademarks of SAP SE (or an SAP affiliate company) in Germany and other countries.
+
 
 
