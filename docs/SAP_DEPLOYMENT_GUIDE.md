@@ -75,8 +75,8 @@ SU01 → Create `ZMCP_ODATA` → Type: Communication (C) → Assign S_SERVICE fo
 
 ```env
 SAP_BASE_URL=https://your-sap-host:44300
-SAP_CLIENT=100
-SAP_USER=ZMCP_ODATA
+SAP_CLIENT=
+SAP_USER=
 SAP_PASSWORD=your-password
 ODATA_MODE=custom
 ODATA_SERVICE_PATH=/sap/opu/odata/sap/ZSB_SYNTASEC
@@ -113,3 +113,4 @@ Unpublish binding → Delete all objects in Z_SYNTASEC → Delete package. Zero 
 ---
 
 Built by [SyntaAI](https://syntaai.com)
+contact@syntaai.com
