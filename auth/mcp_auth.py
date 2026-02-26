@@ -1,171 +1,130 @@
 """
-MCP Server Authentication and RBAC
-Simple username/password with role-based tool access control.
-
-In production, replace MCP_USERS dict with database lookup.
+MCP Authentication & RBAC
+==========================
+Simple role-based access control for MCP server users.
+MCP users are separate from SAP users.
 """
-import hashlib
-from typing import Optional, Dict, List
 
-# MCP Users - in production replace with database
-# Passwords stored as SHA256 hash
-MCP_USERS = {
+import hashlib
+import secrets
+import logging
+from typing import Optional
+
+logger = logging.getLogger("syntaai-mcp.auth")
+
+
+# ─── Role Definitions ────────────────────────────────────────────────────────
+
+ROLES = {
+    "security_admin": {
+        "description": "Full access to all security and basis tools",
+        "tools": "*",  # All tools
+    },
+    "auditor": {
+        "description": "Read access to all tools plus report generation",
+        "tools": [
+            "mcp_login",
+            "get_user_roles", "check_sap_all_users", "get_dormant_users",
+            "get_locked_users", "check_sod_violations", "check_critical_tcodes",
+            "get_users_created_recently", "check_default_users",
+            "check_password_policy", "check_users_no_roles",
+            "get_system_info", "get_failed_jobs", "check_rfc_destinations",
+            "get_system_parameters", "check_transport_requests",
+            "generate_security_excel", "generate_risk_summary",
+        ]
+    },
+    "viewer": {
+        "description": "Limited read-only access",
+        "tools": [
+            "mcp_login",
+            "get_user_roles", "get_dormant_users", "get_locked_users",
+            "get_system_info", "check_password_policy",
+        ]
+    },
+}
+
+
+# ─── Default Users ───────────────────────────────────────────────────────────
+# WARNING: Change these in production!
+
+DEFAULT_USERS = {
     "admin": {
         "password_hash": hashlib.sha256("admin123".encode()).hexdigest(),
-        "sap_user": "ADMIN",
-        "mcp_role": "security_admin",
-        "full_name": "MCP Administrator"
+        "role": "security_admin",
+        "display_name": "MCP Administrator",
     },
     "auditor": {
         "password_hash": hashlib.sha256("audit123".encode()).hexdigest(),
-        "sap_user": "AUDITOR",
-        "mcp_role": "auditor",
-        "full_name": "Security Auditor"
+        "role": "auditor",
+        "display_name": "Security Auditor",
     },
     "viewer": {
         "password_hash": hashlib.sha256("view123".encode()).hexdigest(),
-        "sap_user": "VIEWER",
-        "mcp_role": "viewer",
-        "full_name": "Read Only Viewer"
-    }
-}
-
-# Role to Tool permissions mapping
-ROLE_PERMISSIONS = {
-    "security_admin": {
-        "tools": "*",  # all tools
-        "can_export": True,
-        "description": "Full access to all security tools and exports"
+        "role": "viewer",
+        "display_name": "Read-Only Viewer",
     },
-    "auditor": {
-        "tools": [
-            "mcp_login",
-            "get_user_roles",
-            "check_sap_all_users",
-            "get_dormant_users",
-            "get_locked_users",
-            "check_sod_violations",
-            "check_critical_tcodes",
-            "get_users_created_recently",
-            "check_default_users",
-            "check_password_policy",
-            "check_users_no_roles",
-            "get_system_info",
-            "get_failed_jobs",
-            "check_rfc_destinations",
-            "get_system_parameters",
-            "check_transport_requests",
-            "generate_security_excel",
-            "generate_risk_summary"
-        ],
-        "can_export": True,
-        "description": "Read access to security tools with export capability"
-    },
-    "viewer": {
-        "tools": [
-            "mcp_login",
-            "get_user_roles",
-            "get_dormant_users",
-            "get_locked_users",
-            "get_system_info",
-            "check_password_policy"
-        ],
-        "can_export": False,
-        "description": "Limited read-only access"
-    }
 }
 
 
-def authenticate_user(username: str, password: str) -> Optional[Dict]:
-    """
-    Authenticate MCP user by username and password.
-    Returns user profile dict if valid, None if invalid.
+class MCPAuthManager:
+    """Manages MCP user authentication and authorization."""
 
-    Args:
-        username: MCP username
-        password: Plain text password
+    def __init__(self):
+        self.users = DEFAULT_USERS.copy()
+        self.current_user: Optional[str] = None
+        self.current_role: Optional[str] = None
+        self._session_token: Optional[str] = None
 
-    Returns:
-        User profile dict with username, sap_user, mcp_role, full_name
-        None if authentication fails
-    """
-    user = MCP_USERS.get(username)
-    if not user:
-        return None
+    def login(self, username: str, password: str) -> str:
+        """Authenticate an MCP user."""
+        user = self.users.get(username)
+        if not user:
+            logger.warning(f"Login failed: unknown user '{username}'")
+            return "❌ Login failed: Invalid username or password."
 
-    password_hash = hashlib.sha256(password.encode()).hexdigest()
-    if user["password_hash"] != password_hash:
-        return None
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        if password_hash != user["password_hash"]:
+            logger.warning(f"Login failed: wrong password for '{username}'")
+            return "❌ Login failed: Invalid username or password."
 
-    return {
-        "username": username,
-        "sap_user": user["sap_user"],
-        "mcp_role": user["mcp_role"],
-        "full_name": user["full_name"]
-    }
+        self.current_user = username
+        self.current_role = user["role"]
+        self._session_token = secrets.token_hex(16)
 
+        logger.info(f"User '{username}' logged in with role '{self.current_role}'")
 
-def is_tool_allowed(mcp_role: str, tool_name: str) -> bool:
-    """
-    Check if a role is allowed to use a specific tool.
+        role_info = ROLES.get(self.current_role, {})
+        tool_count = "all" if role_info.get("tools") == "*" else len(role_info.get("tools", []))
 
-    Args:
-        mcp_role: The MCP role name
-        tool_name: The tool function name
+        return (
+            f"✅ Welcome, {user['display_name']}!\n"
+            f"Role: {self.current_role}\n"
+            f"Access: {role_info.get('description', 'N/A')}\n"
+            f"Tools available: {tool_count}"
+        )
 
-    Returns:
-        True if allowed, False if not
-    """
-    role_config = ROLE_PERMISSIONS.get(mcp_role, {})
-    tools = role_config.get("tools", [])
+    def is_authenticated(self) -> bool:
+        """Check if a user is currently authenticated."""
+        return self.current_user is not None
 
-    if tools == "*":
-        return True
+    def has_permission(self, tool_name: str) -> bool:
+        """Check if the current user has permission to use a tool."""
+        if not self.current_role:
+            return False
 
-    return tool_name in tools
+        role = ROLES.get(self.current_role, {})
+        allowed_tools = role.get("tools", [])
 
+        # Wildcard = all tools
+        if allowed_tools == "*":
+            return True
 
-def get_role_info(mcp_role: str) -> Dict:
-    """
-    Get role configuration including allowed tools and capabilities.
+        return tool_name in allowed_tools
 
-    Args:
-        mcp_role: The MCP role name
-
-    Returns:
-        Role configuration dict
-    """
-    return ROLE_PERMISSIONS.get(mcp_role, {})
-
-
-def get_allowed_tools(mcp_role: str) -> List[str]:
-    """
-    Get list of allowed tools for a role.
-
-    Args:
-        mcp_role: The MCP role name
-
-    Returns:
-        List of tool names, or ["*"] for all tools
-    """
-    role_config = ROLE_PERMISSIONS.get(mcp_role, {})
-    tools = role_config.get("tools", [])
-
-    if tools == "*":
-        return ["*"]
-
-    return tools
-
-
-def can_export(mcp_role: str) -> bool:
-    """
-    Check if a role can export data (Excel/PDF).
-
-    Args:
-        mcp_role: The MCP role name
-
-    Returns:
-        True if can export, False otherwise
-    """
-    role_config = ROLE_PERMISSIONS.get(mcp_role, {})
-    return role_config.get("can_export", False)
+    def logout(self) -> str:
+        """Log out the current user."""
+        user = self.current_user
+        self.current_user = None
+        self.current_role = None
+        self._session_token = None
+        return f"✅ User '{user}' logged out."
