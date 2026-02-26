@@ -211,24 +211,33 @@ Consider pairing this with a local LLM (Ollama + Llama) instead of Claude API fo
 
 ---
 
-## Custom OData Service
+## SAP-Side Setup: CDS Views
 
-For full security auditing, you'll need a custom OData service that exposes security tables. The service should expose these entity sets:
+This MCP server requires **9 CDS views** deployed on your SAP system. These are read-only views on standard SAP tables — zero risk, zero modification to SAP standard code.
 
-| Entity Set | SAP Table | Purpose |
-|-----------|-----------|---------|
-| SapAllUsers | USR02 | User master records |
-| UserProfiles | UST04 | User profile assignments |
-| UserRoles | AGR_USERS | Role-user assignments |
-| RoleTcodes | AGR_TCODES | Role-tcode assignments |
-| RoleTexts | AGR_TEXTS | Role descriptions |
-| RfcDestinations | RFCDES | RFC destinations |
-| SystemParameters | RZ11/RSPARAM | Profile parameters |
-| BackgroundJobs | TBTCO | Background job overview |
-| TransportRequests | E070 | Transport requests |
-| SystemInfo | Custom | System information |
+| # | CDS View | SAP Tables | Purpose |
+|---|----------|-----------|---------|
+| 1 | `ZI_SEC_USERS` | USR02, USR21, ADRP | All user master data |
+| 2 | `ZI_SEC_USER_PROFILES` | UST04, USR02 | SAP_ALL/SAP_NEW detection |
+| 3 | `ZI_SEC_USER_ACCESS` | USR02, AGR_USERS, AGR_DEFINE, AGR_TEXTS | User-role assignments |
+| 4 | `ZI_SEC_ROLE_TCODES` | AGR_TCODES, TSTCT, AGR_HIER | Role tcodes & Fiori apps |
+| 5 | `ZI_SEC_SYSTEM_PARAMS` | PAHI | Security profile parameters |
+| 6 | `ZI_SEC_RFC_DESTINATIONS` | RFCDES | RFC destination security |
+| 7 | `ZI_SEC_BACKGROUND_JOBS` | TBTCO | Background job monitoring |
+| 8 | `ZI_SEC_TRANSPORTS` | E070, E07T | Transport monitoring |
+| 9 | `ZI_SEC_SYSTEM_INFO` | T000 | System client info |
 
-See [docs/custom_odata_setup.md](docs/custom_odata_setup.md) for ABAP implementation guide.
+### Deployment Options
+
+| Method | Best For |
+|--------|----------|
+| **Eclipse ADT** (recommended) | Copy `.asddls` files from `abap/cds_views/`, activate, register OData |
+| **SAP Transport** | Export from DEV, transport to QAS/PRD via SE09 |
+| **abapGit** | Git-based deployment, version controlled |
+| **Manual** | Customer creates views from documentation |
+
+📖 **Full deployment guide:** [docs/SAP_DEPLOYMENT_GUIDE.md](docs/SAP_DEPLOYMENT_GUIDE.md)  
+📁 **CDS view source code:** [abap/cds_views/](abap/cds_views/)
 
 ---
 
@@ -250,8 +259,20 @@ sap-security-mcp/
 │   ├── security_tools.py  # Security analysis (tools 1-10)
 │   ├── basis_tools.py     # Basis monitoring (tools 11-15)
 │   └── report_tools.py    # Report generation (tools 16-17)
+├── abap/
+│   └── cds_views/         # SAP CDS view source code (.asddls)
+│       ├── 01_ZI_SEC_USERS.asddls
+│       ├── 02_ZI_SEC_USER_PROFILES.asddls
+│       ├── 03_ZI_SEC_USER_ACCESS.asddls
+│       ├── 04_ZI_SEC_ROLE_TCODES.asddls
+│       ├── 05_ZI_SEC_SYSTEM_PARAMS.asddls
+│       ├── 06_ZI_SEC_RFC_DESTINATIONS.asddls
+│       ├── 07_ZI_SEC_BACKGROUND_JOBS.asddls
+│       ├── 08_ZI_SEC_TRANSPORTS.asddls
+│       └── 09_ZI_SEC_SYSTEM_INFO.asddls
 └── docs/
-    └── custom_odata_setup.md
+    ├── SAP_DEPLOYMENT_GUIDE.md  # Full SAP-side setup instructions
+    └── custom_odata_setup.md    # Legacy SEGW approach
 ```
 
 ---

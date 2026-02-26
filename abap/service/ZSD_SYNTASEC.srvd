@@ -1,0 +1,12 @@
+@EndUserText.label: 'SyntaAI SAP Security Service'
+define service ZSD_SYNTASEC {
+  expose ZI_SEC_USERS            as Users;
+  expose ZI_SEC_USER_PROFILES    as UserProfiles;
+  expose ZI_SEC_USER_ACCESS      as UserRoleAccess;
+  expose ZI_SEC_ROLE_TCODES      as RoleTcodes;
+  expose ZI_SEC_SYSTEM_PARAMS    as SystemParameters;
+  expose ZI_SEC_RFC_DESTINATIONS as RfcDestinations;
+  expose ZI_SEC_BACKGROUND_JOBS  as BackgroundJobs;
+  expose ZI_SEC_TRANSPORTS       as Transports;
+  expose ZI_SEC_SYSTEM_INFO      as SystemInfo;
+}
