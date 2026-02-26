@@ -20,6 +20,19 @@ Built by [SyntaAI](https://syntaai.com) — SAP Security Intelligence.
 | **Maintenance** | SDK version conflicts | Standard HTTP — always works |
 
 ---
+## ⚠️ Important Disclaimer
+
+This SAP Security MCP Server is an open-source community contribution 
+provided as-is for exploration, learning, and non-production use only.
+
+- Always connect to a sandbox or development system first. Never use 
+  production without explicit approval from your SAP team and management.
+- This tool is read-only by design. However, Syntasec and its contributors 
+  accept no liability for any unintended system impact.
+- Claude AI operates autonomously when using MCP. Always review all outputs 
+  with your SAP Basis or Security team before taking any action.
+- By using this tool you accept full responsibility for its use 
+  in your environment.
 
 ## Features
 
