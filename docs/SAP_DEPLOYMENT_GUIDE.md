@@ -1,4 +1,6 @@
 # SAP-Side Deployment Guide: SyntaAI MCP Security Service
+www.syntaai.com
+contact@syntaai.com
 
 ## Overview
 
