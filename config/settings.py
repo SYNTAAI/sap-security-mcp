@@ -13,8 +13,8 @@ class Settings:
     """SAP OData connection settings loaded from environment variables."""
 
     # ─── SAP Connection ──────────────────────────────────────────────────
-    sap_base_url: str = ""          # e.g., https://sap-host:44300
-    sap_client: str = "100"
+    sap_base_url: str = ""          # e.g., https://sap-host:
+    sap_client: str = ""
     sap_user: str = ""
     sap_password: str = ""
     sap_language: str = "EN"
