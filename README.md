@@ -111,4 +111,4 @@ MCP_NO_AUTH=1 python server.py      # without OAuth (development)
 
 ## License
 
-Proprietary - SyntaAI Technologies
+Apache License 2.0 — see [LICENSE](LICENSE) for details.
