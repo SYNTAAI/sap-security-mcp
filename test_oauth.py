@@ -14,11 +14,13 @@ Tests the full OAuth flow:
 
 Run:
   pip install httpx
+  export TEST_PASSWORD='...'                        # required, never hardcoded
   python test_oauth.py                              # test live server
   python test_oauth.py --base-url http://localhost:8000   # test local
 """
 
 import argparse
+import os
 import hashlib
 import base64
 import secrets
@@ -34,9 +36,20 @@ except ImportError:
     sys.exit(1)
 
 # ---- Config ----
+# Credentials come from the environment. Nothing is hardcoded here: this file
+# is public, and a password in source is a password in git history.
+#
+#   export TEST_EMAIL=...        # optional, defaults to the demo account
+#   export TEST_PASSWORD=...     # required
 DEFAULT_BASE = "https://mcp.syntaai.com"
-TEST_EMAIL = "demo@syntaai.com"
-TEST_PASSWORD = "SyntaAI-Demo-2026!"
+TEST_EMAIL = os.environ.get("TEST_EMAIL", "demo@syntaai.com")
+
+try:
+    TEST_PASSWORD = os.environ["TEST_PASSWORD"]
+except KeyError:
+    print("TEST_PASSWORD is not set. Export the account password before running:")
+    print("    export TEST_PASSWORD='...'")
+    sys.exit(1)
 
 
 def b64url(data: bytes) -> str:

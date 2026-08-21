@@ -61,18 +61,55 @@ def _save_json(path: Path, data: dict):
 
 
 # --- Pre-configured test accounts ---
-TEST_USERS = {
-    "mcp-review@anthropic.com": {
-        "password": os.getenv("REVIEW_PASSWORD", "SyntaAI-MCP-Review-2026!"),
-        "name": "Anthropic MCP Review",
-        "role": "reviewer",
-    },
-    "demo@syntaai.com": {
-        "password": os.getenv("DEMO_PASSWORD", "SyntaAI-Demo-2026!"),
-        "name": "SyntaAI Demo User",
-        "role": "admin",
-    },
-}
+#
+# Passwords are read from the environment and nowhere else. There is
+# deliberately no fallback value: a credential that lives in source is a
+# credential that ends up in git, and this repository is public.
+#
+# Fail closed. If the environment variable is missing or empty, the account is
+# omitted from TEST_USERS entirely and an error is logged. The login handler
+# already treats an unknown email as a failed sign-in, so a disabled account
+# simply cannot authenticate -- the server keeps running and serving.
+
+
+def _load_account(env_var: str, email: str, name: str, role: str):
+    """Build one account from the environment, or disable it and say why."""
+    try:
+        password = os.environ[env_var]
+    except KeyError:
+        logger.error(
+            "%s is not set - the %s account is DISABLED and cannot sign in. "
+            "Set %s in the environment and restart to enable it.",
+            env_var, email, env_var,
+        )
+        return None
+
+    if not password.strip():
+        logger.error(
+            "%s is set but empty - the %s account is DISABLED and cannot sign in.",
+            env_var, email,
+        )
+        return None
+
+    return email, {"password": password, "name": name, "role": role}
+
+
+TEST_USERS = dict(
+    entry
+    for entry in (
+        _load_account("REVIEW_PASSWORD", "mcp-review@anthropic.com",
+                      "Anthropic MCP Review", "reviewer"),
+        _load_account("DEMO_PASSWORD", "demo@syntaai.com",
+                      "SyntaAI Demo User", "admin"),
+    )
+    if entry is not None
+)
+
+if not TEST_USERS:
+    logger.error(
+        "No sign-in accounts are configured. The OAuth authorize flow will "
+        "reject every login until REVIEW_PASSWORD or DEMO_PASSWORD is set."
+    )
 
 ISSUER_URL = os.getenv("SYNTAAI_ISSUER_URL", "https://mcp.syntaai.com")
 
@@ -462,11 +499,6 @@ border-radius:8px;font-size:12px;color:#166534}}
       <input type="password" id="password" name="password" required></div>
     <button type="submit">Authorize &amp; Continue</button>
   </form>
-  <div class="hint">
-    <strong>Demo Access:</strong><br>
-    Email: <code>demo@syntaai.com</code><br>
-    Password: <code>SyntaAI-Demo-2026!</code>
-  </div>
   <div class="foot">
     By signing in you agree to SyntaAI's
     <a href="https://mcp.syntaai.com/terms" style="color:#3b82f6">Terms</a> &amp;
@@ -502,7 +534,7 @@ async def login_page_handler(request: Request) -> HTMLResponse | RedirectRespons
         password = str(form.get("password", "")).strip()
 
         user = TEST_USERS.get(email)
-        if user and user["password"] == password:
+        if user and user.get("password") and secrets.compare_digest(user["password"], password):
             redirect_url = provider._issue_auth_code(
                 session_id, email, user["name"], user["role"]
             )
